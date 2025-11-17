@@ -8,15 +8,15 @@ interface VideoRecorderProps {
 const VideoRecorder: React.FC<VideoRecorderProps> = ({ onClose, onVideoRecorded }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const [isRecording, setIsRecording] = useState(false);
-  const [stream, setStream] = useState<MediaStream | null>(null);
   const recordedChunks = useRef<Blob[]>([]);
 
   useEffect(() => {
     const startCamera = async () => {
       try {
         const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        setStream(mediaStream);
+        streamRef.current = mediaStream;
         if (videoRef.current) {
           videoRef.current.srcObject = mediaStream;
         }
@@ -29,15 +29,30 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({ onClose, onVideoRecorded 
     startCamera();
 
     return () => {
-      stream?.getTracks().forEach(track => track.stop());
+      // Clean up media stream
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+
+      // Clean up video element
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+
+      // Clean up media recorder
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.stop();
+        mediaRecorderRef.current = null;
+      }
     };
   }, []);
 
   const handleStartRecording = () => {
-    if (!stream) return;
+    if (!streamRef.current) return;
     setIsRecording(true);
     recordedChunks.current = [];
-    mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'video/webm' });
+    mediaRecorderRef.current = new MediaRecorder(streamRef.current, { mimeType: 'video/webm' });
     mediaRecorderRef.current.ondataavailable = (event) => {
       if (event.data.size > 0) {
         recordedChunks.current.push(event.data);

@@ -305,7 +305,29 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ page, onSave, onBack }) 
         setExportStatus({ inProgress: false, message: '' });
     }
   }
-  
+
+  // Cleanup on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      // Clean up audio player
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+        audioPlayerRef.current = null;
+      }
+
+      // Clean up media recorder and streams
+      if (mediaRecorderRef.current) {
+        if (mediaRecorderRef.current.state === 'recording') {
+          mediaRecorderRef.current.stop();
+        }
+        if (mediaRecorderRef.current.stream) {
+          mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+        }
+        mediaRecorderRef.current = null;
+      }
+    };
+  }, []);
+
   return (
     <div className="relative w-full h-screen bg-stone-100 overflow-hidden" onClick={handleCanvasClick}>
        {items.map(item => (

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { JournalPage } from './types';
 import { CanvasView } from './components/CanvasView';
 import { PlusIcon } from './components/Icons';
-import { initialJournalPages } from './data/initialData';
+import { initialData as initialJournalPages } from './data/initialData';
 import {
   getCurrentUser,
   loginAnonymously,
