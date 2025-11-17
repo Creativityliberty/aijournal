@@ -1,0 +1,188 @@
+{
+    "projectId": "691a6f970027876be2db",
+    "endpoint": "https://fra.cloud.appwrite.io/v1",
+    "projectName": "Ai Journal",
+    "settings": {
+        "services": {
+            "account": true,
+            "avatars": true,
+            "databases": true,
+            "locale": true,
+            "health": true,
+            "storage": true,
+            "teams": true,
+            "users": true,
+            "sites": true,
+            "functions": true,
+            "graphql": true,
+            "messaging": true
+        },
+        "auth": {
+            "methods": {
+                "jwt": true,
+                "phone": true,
+                "invites": true,
+                "anonymous": true,
+                "email-otp": true,
+                "magic-url": true,
+                "email-password": true
+            },
+            "security": {
+                "duration": 31536000,
+                "limit": 0,
+                "sessionsLimit": 10,
+                "passwordHistory": 0,
+                "passwordDictionary": false,
+                "personalDataCheck": false,
+                "sessionAlerts": false,
+                "mockNumbers": []
+            }
+        }
+    },
+    "tablesDB": [
+        {
+            "$id": "691a7b05002d9a035b39",
+            "name": "ai-journal-db",
+            "enabled": true
+        }
+    ],
+    "tables": [
+        {
+            "$id": "journal_pages",
+            "$permissions": [
+                "read(\"any\")",
+                "create(\"any\")",
+                "update(\"any\")",
+                "delete(\"any\")"
+            ],
+            "databaseId": "691a7b05002d9a035b39",
+            "name": "Journal Pages",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "userId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "date",
+                    "type": "datetime",
+                    "required": true,
+                    "array": false,
+                    "format": "",
+                    "default": null
+                },
+                {
+                    "key": "previewImage",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 2048,
+                    "default": null,
+                    "encrypt": false
+                }
+            ],
+            "indexes": [
+                {
+                    "key": "userId_index",
+                    "type": "key",
+                    "status": "available",
+                    "columns": [
+                        "userId"
+                    ],
+                    "orders": []
+                }
+            ]
+        },
+        {
+            "$id": "canvas_items",
+            "$permissions": [
+                "read(\"any\")",
+                "create(\"any\")",
+                "update(\"any\")",
+                "delete(\"any\")"
+            ],
+            "databaseId": "691a7b05002d9a035b39",
+            "name": "Canvas Items",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "pageId",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 255,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "type",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 50,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "content",
+                    "type": "string",
+                    "required": true,
+                    "array": false,
+                    "size": 4096,
+                    "default": null,
+                    "encrypt": false
+                },
+                {
+                    "key": "audioContent",
+                    "type": "string",
+                    "required": false,
+                    "array": false,
+                    "size": 4096,
+                    "default": null,
+                    "encrypt": false
+                }
+            ],
+            "indexes": []
+        }
+    ],
+    "buckets": [
+        {
+            "$id": "images",
+            "$permissions": [
+                "read(\"any\")",
+                "create(\"any\")",
+                "update(\"any\")",
+                "delete(\"any\")"
+            ],
+            "fileSecurity": false,
+            "name": "Files",
+            "enabled": true,
+            "maximumFileSize": 10485760,
+            "allowedFileExtensions": [
+                "jpg",
+                "jpeg",
+                "png",
+                "gif",
+                "webp",
+                "mp4",
+                "webm",
+                "mov",
+                "avi",
+                "mp3",
+                "wav",
+                "ogg",
+                "m4a"
+            ],
+            "compression": "none",
+            "encryption": true,
+            "antivirus": true
+        }
+    ]
+}
