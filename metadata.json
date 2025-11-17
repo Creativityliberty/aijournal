@@ -1,0 +1,8 @@
+{
+  "name": "AI Journal",
+  "description": "A minimalist digital journal to capture your day with photos, text, and AI-powered image generation and voice transcription. Create visual stories by adding images, dictating notes, and generating pictures from your imagination.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ]
+}
