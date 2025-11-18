@@ -1,0 +1,17 @@
+{
+  "name": "gemini-image-generator",
+  "version": "1.0.0",
+  "description": "Generate images using Google Gemini Imagen 4.0",
+  "main": "src/main.js",
+  "type": "module",
+  "scripts": {
+    "format": "prettier --write ."
+  },
+  "keywords": ["gemini", "imagen", "ai", "image-generation"],
+  "dependencies": {
+    "@google/genai": "^1.29.1"
+  },
+  "devDependencies": {
+    "prettier": "^3.2.5"
+  }
+}

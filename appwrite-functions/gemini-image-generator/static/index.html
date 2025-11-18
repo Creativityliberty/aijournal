@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gemini Image Generator</title>
+
+    <script>
+      async function onSubmit(prompt, aspectRatio) {
+        const response = await fetch('/', {
+          method: 'POST',
+          body: JSON.stringify({ prompt, aspectRatio }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        const json = await response.json();
+
+        if (!json.ok || json.error) {
+          alert(json.error);
+          return null;
+        }
+
+        return json.image;
+      }
+    </script>
+
+    <script src="//unpkg.com/alpinejs" defer></script>
+
+    <link rel="stylesheet" href="https://unpkg.com/@appwrite.io/pink@0" />
+    <link rel="stylesheet" href="https://unpkg.com/@appwrite.io/pink-icons@0" />
+  </head>
+  <body class="theme-dark">
+    <main class="main-content">
+      <div class="top-cover u-padding-block-end-56">
+        <div class="container">
+          <div
+            class="u-flex u-gap-16 u-flex-justify-center u-margin-block-start-16"
+          >
+            <h1 class="heading-level-1">🎨 Gemini Image Generator</h1>
+          </div>
+          <p
+            class="body-text-1 u-normal u-margin-block-start-8"
+            style="max-width: 50rem"
+          >
+            Generate stunning images using Google's Gemini Imagen 4.0 model. Enter a description and watch AI create your vision.
+          </p>
+        </div>
+      </div>
+      <div
+        class="container u-margin-block-start-negative-56"
+        x-data="{ prompt: '', aspectRatio: '1:1', imageUrl: '', loading: false }"
+      >
+        <div class="card u-flex u-gap-24 u-flex-vertical">
+          <div class="u-flex u-cross-center u-gap-8 u-flex-vertical">
+            <div
+              class="input-text-wrapper is-with-end-button u-width-full-line"
+            >
+              <input
+                x-model="prompt"
+                type="text"
+                placeholder="Describe your image... (e.g., 'A serene mountain lake at sunset')"
+              />
+              <div class="icon-search" aria-hidden="true"></div>
+            </div>
+
+            <div class="u-flex u-gap-12 u-width-full-line">
+              <div class="u-flex-1">
+                <label class="label">Aspect Ratio</label>
+                <select x-model="aspectRatio" class="select u-width-full-line">
+                  <option value="1:1">Square (1:1)</option>
+                  <option value="16:9">Landscape (16:9)</option>
+                  <option value="9:16">Portrait (9:16)</option>
+                  <option value="4:3">Classic (4:3)</option>
+                  <option value="3:4">Vertical (3:4)</option>
+                </select>
+              </div>
+
+              <div class="u-flex u-cross-end">
+                <button
+                  class="button"
+                  x-bind:disabled="loading || !prompt"
+                  x-on:click="async () => {
+                    loading = true;
+                    imageUrl = '';
+                    try {
+                      imageUrl = await onSubmit(prompt, aspectRatio)
+                    } catch(err) {
+                      console.error(err);
+                    } finally {
+                      loading = false;
+                    }
+                  }"
+                >
+                  <span class="text" x-text="loading ? 'Generating...' : 'Generate Image'"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <template x-if="loading">
+            <div class="u-flex u-flex-vertical u-gap-12 u-main-center u-cross-center" style="min-height: 300px">
+              <div class="loader"></div>
+              <p class="body-text-2 u-color-text-gray">Generating your image...</p>
+            </div>
+          </template>
+
+          <template x-if="imageUrl && !loading">
+            <div class="u-flex u-flex-vertical u-gap-12">
+              <div class="u-flex u-flex-vertical u-gap-12 card">
+                <div class="u-flex u-gap-12 u-main-space-between u-cross-center">
+                  <h5 class="eyebrow-heading-2">Generated Image:</h5>
+                  <a
+                    x-bind:href="imageUrl"
+                    x-bind:download="'gemini-' + Date.now() + '.jpg'"
+                    class="button is-secondary is-small"
+                  >
+                    <span class="icon-download" aria-hidden="true"></span>
+                    <span class="text">Download</span>
+                  </a>
+                </div>
+
+                <div style="overflow: hidden; border-radius: 0.5rem">
+                  <img
+                    x-bind:src="imageUrl"
+                    alt="Generated image"
+                    style="width: 100%; height: auto; display: block"
+                  />
+                </div>
+
+                <p class="body-text-2 u-color-text-gray" x-text="'Prompt: ' + prompt"></p>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </main>
+
+    <style>
+      .loader {
+        border: 4px solid rgba(255, 255, 255, 0.1);
+        border-left-color: #5865f2;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
+  </body>
+</html>
