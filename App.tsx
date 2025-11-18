@@ -4,31 +4,45 @@ import { CanvasView } from './components/CanvasView';
 import { PlusIcon } from './components/Icons';
 import { initialData as initialJournalPages } from './data/initialData';
 import {
-  getCurrentUser,
-  loginAnonymously,
   getUserPages,
   saveJournalPage,
   deletePage,
 } from './services/appwriteService';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import AuthRouter from './components/auth/AuthRouter';
+import Profile from './components/auth/Profile';
 
 const JournalView: React.FC<{
   pages: JournalPage[];
   onSelectPage: (page: JournalPage) => void;
   onNewPage: () => void;
   onDeletePage: (pageId: string) => void;
-}> = ({ pages, onSelectPage, onNewPage, onDeletePage }) => (
+  onOpenProfile: () => void;
+}> = ({ pages, onSelectPage, onNewPage, onDeletePage, onOpenProfile }) => (
   <div className="min-h-screen bg-stone-50 text-gray-800 p-4 sm:p-8">
     <header className="flex justify-between items-center mb-8">
       <h1 className="text-4xl font-bold" style={{ fontFamily: "'Times New Roman', serif" }}>
         AI Journal
       </h1>
-      <button
-        onClick={onNewPage}
-        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition-transform transform hover:scale-105 shadow-md"
-      >
-        <PlusIcon className="w-5 h-5" />
-        New Page
-      </button>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onOpenProfile}
+          className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-full font-semibold hover:bg-gray-50 transition-transform transform hover:scale-105 shadow-md"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+          Profile
+        </button>
+        <button
+          onClick={onNewPage}
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition-transform transform hover:scale-105 shadow-md"
+        >
+          <PlusIcon className="w-5 h-5" />
+          New Page
+        </button>
+      </div>
     </header>
 
     {pages.length === 0 ? (
@@ -79,56 +93,52 @@ const JournalView: React.FC<{
   </div>
 );
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [pages, setPages] = useState<JournalPage[]>([]);
   const [activePage, setActivePage] = useState<JournalPage | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [showProfile, setShowProfile] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialisation : authentification et chargement des pages
+  // Charger les pages quand l'utilisateur est authentifié
   useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        setIsLoading(true);
+    if (isAuthenticated && user) {
+      loadUserPages();
+    } else if (!authLoading) {
+      setIsLoading(false);
+    }
+  }, [isAuthenticated, user, authLoading]);
 
-        // 1. Vérifier si l'utilisateur est déjà connecté
-        let user = await getCurrentUser();
+  const loadUserPages = async () => {
+    if (!user) return;
 
-        if (!user) {
-          // 2. Si pas connecté, créer une session anonyme
-          const anonymousUserId = await loginAnonymously();
-          setUserId(anonymousUserId);
+    try {
+      setIsLoading(true);
 
-          // 3. Pour la première utilisation, charger les données initiales
-          const isFirstRun = !localStorage.getItem('appwrite-migrated');
-          if (isFirstRun) {
-            // Charger les données d'exemple
-            setPages(initialJournalPages);
-            localStorage.setItem('appwrite-migrated', 'true');
-          } else {
-            // Charger les pages depuis Appwrite
-            const userPages = await getUserPages(anonymousUserId);
-            setPages(userPages);
-          }
+      // Charger les pages depuis Appwrite
+      const userPages = await getUserPages(user.$id);
+
+      // Si c'est la première fois, charger les données d'exemple
+      if (userPages.length === 0) {
+        const isFirstRun = !localStorage.getItem('appwrite-migrated');
+        if (isFirstRun) {
+          setPages(initialJournalPages);
+          localStorage.setItem('appwrite-migrated', 'true');
         } else {
-          setUserId(user.$id);
-
-          // Charger les pages depuis Appwrite
-          const userPages = await getUserPages(user.$id);
-          setPages(userPages);
+          setPages([]);
         }
-      } catch (error) {
-        console.error('Error initializing app:', error);
-        // En cas d'erreur, utiliser localStorage comme fallback
-        const savedPages = localStorage.getItem('ai-journal-pages');
-        setPages(savedPages ? JSON.parse(savedPages) : initialJournalPages);
-      } finally {
-        setIsLoading(false);
+      } else {
+        setPages(userPages);
       }
-    };
-
-    initializeApp();
-  }, []);
+    } catch (error) {
+      console.error('Error loading pages:', error);
+      // Fallback vers localStorage
+      const savedPages = localStorage.getItem('ai-journal-pages');
+      setPages(savedPages ? JSON.parse(savedPages) : initialJournalPages);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleNewPage = () => {
     const newPage: JournalPage = {
@@ -144,14 +154,14 @@ const App: React.FC = () => {
   };
 
   const handleSavePage = async (updatedPage: JournalPage) => {
-    if (!userId) {
-      console.error('No user ID available');
+    if (!user) {
+      console.error('No user available');
       return;
     }
 
     try {
       // Sauvegarder dans Appwrite
-      await saveJournalPage(updatedPage, userId);
+      await saveJournalPage(updatedPage, user.$id);
 
       // Mettre à jour l'état local
       setPages(prevPages => {
@@ -187,8 +197,23 @@ const App: React.FC = () => {
     setActivePage(null);
   };
 
+  // Afficher le profil
+  if (showProfile) {
+    return (
+      <div>
+        <button
+          onClick={() => setShowProfile(false)}
+          className="fixed top-4 left-4 z-50 px-4 py-2 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow font-medium text-gray-700"
+        >
+          ← Back to Journal
+        </button>
+        <Profile />
+      </div>
+    );
+  }
+
   // Écran de chargement
-  if (isLoading) {
+  if (isLoading || authLoading) {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center">
         <div className="text-center">
@@ -211,17 +236,30 @@ const App: React.FC = () => {
     );
   }
 
+  // Si une page est active, afficher le canvas
   if (activePage) {
     return <CanvasView page={activePage} onSave={handleSavePage} onBack={handleBack} />;
   }
 
+  // Afficher la vue journal
   return (
     <JournalView
       pages={pages}
       onSelectPage={handleSelectPage}
       onNewPage={handleNewPage}
       onDeletePage={handleDeletePage}
+      onOpenProfile={() => setShowProfile(true)}
     />
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <ProtectedRoute fallback={<AuthRouter />}>
+        <AppContent />
+      </ProtectedRoute>
+    </AuthProvider>
   );
 };
 
